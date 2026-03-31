@@ -41,7 +41,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 7px;
+    gap: 5px;
     padding: 8px 10px 0;
     height: 100dvh;
   }
@@ -180,6 +180,21 @@
     color: var(--knesset);
     line-height: 1.3;
     transition: opacity 0.3s;
+  }
+
+  .two-words-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(230,57,70,0.1);
+    color: var(--accent);
+    border: 1.5px solid rgba(230,57,70,0.25);
+    border-radius: 20px;
+    font-size: 0.62rem;
+    font-weight: 800;
+    padding: 2px 9px;
+    margin-bottom: 3px;
+    letter-spacing: 0.5px;
   }
 
   .grid-container {
@@ -415,6 +430,21 @@
   }
   .splash-name strong { color: var(--text); font-family: 'Rubik', sans-serif; font-weight: 800; }
 
+  .splash-two-words-note {
+    font-family: 'Assistant', sans-serif;
+    font-size: 0.78rem;
+    color: var(--accent);
+    font-weight: 700;
+    background: rgba(230,57,70,0.07);
+    border: 1.5px solid rgba(230,57,70,0.2);
+    border-radius: 10px;
+    padding: 7px 14px;
+    width: 100%;
+    text-align: center;
+    display: none;
+  }
+  .splash-two-words-note.visible { display: block; }
+
   .lb-btn {
     background: transparent;
     border: none;
@@ -585,6 +615,10 @@
         <div class="welcome-step-text">יש לך <strong>זמן מוגבל</strong> — מהר = יותר נקודות. כל סיבוב קשה יותר!</div>
       </div>
       <div class="welcome-step">
+        <span class="welcome-step-icon">🔍</span>
+        <div class="welcome-step-text">מסיבוב 3 ייתכן <strong>שתי מילים לחפש</strong> — צריך למצוא את שתיהן!</div>
+      </div>
+      <div class="welcome-step">
         <span class="welcome-step-icon">❤️</span>
         <div class="welcome-step-text"><strong>3 חיים</strong> — אם הזמן נגמר מאבדים חיים. אזלו החיים — נגמר המשחק</div>
       </div>
@@ -638,6 +672,8 @@
     <div class="question-label">הפשע</div>
     <div class="question-text" id="question-text"></div>
   </div>
+
+
 
   <div class="grid-container">
     <div class="grid" id="grid"></div>
@@ -708,6 +744,10 @@
         <div class="how-step-text">גרור עם האצבע או העכבר, או <strong>לחץ אות-אות</strong> — <strong>אופקי, אנכי, ואלכסוני</strong> בכל כיוון. לחיצה על אות לא סמוכה מאפסת את הסימון.</div>
       </div>
       <div class="how-step">
+        <span class="how-step-icon">🔍</span>
+        <div class="how-step-text">מסיבוב 3 ייתכנו <strong>שתי מילים נפרדות לחפש</strong> — שתיהן מסומנות באדום. צריך למצוא <strong>את שתיהן</strong> כדי לנצח, עם <strong>זמן כפול</strong>!</div>
+      </div>
+      <div class="how-step">
         <span class="how-step-icon">⏱️</span>
         <div class="how-step-text">יש לך זמן מוגבל לכל סיבוב. <strong>ככל שמוצאים מהר יותר — יותר נקודות.</strong> הזמן קצר יותר בכל סיבוב.</div>
       </div>
@@ -733,7 +773,8 @@
   <div class="splash-card">
     <div class="splash-round-badge" id="splash-round-badge">סיבוב 1</div>
     <div class="splash-accusation" id="splash-accusation"></div>
-    <div class="splash-name">חפש את המילה: <strong id="splash-target">קואליציה</strong></div>
+    <div class="splash-name" id="splash-name-block">חפש את המילה: <strong id="splash-target">קואליציה</strong></div>
+    <div class="splash-two-words-note" id="splash-two-words-note">⚠️ שתי מילים נפרדות — צריך למצוא את שתיהן! זמן כפול.</div>
     <button class="btn-primary" onclick="dismissSplash()">▶ התחל — השעון רץ!</button>
   </div>
 </div>
@@ -741,31 +782,39 @@
 <script>
 // ═══════════════════════════════════════════════════════════
 // ROUNDS DATA
+// target  = display string shown in the question (can be 1 or 2 words with space)
+// The presence of a space in `target` signals a two-word round (when grid allows).
 // ═══════════════════════════════════════════════════════════
 const ROUNDS_DATA = [
   { text: "אחריות לטבח הגדול ביותר בתולדות המדינה", target: "טבח" },
-  { text: "לראשונה אי-פעם דירוג האשראי של ישראל ירד", target: "דירוג" },
+  { text: "לראשונה אי-פעם דירוג האשראי של ישראל ירד", target: "דירוג אשראי" },
   { text: "הפקרת תושבי הצפון במשך חודשים", target: "הפקרת" },
-  { text: "קידום חקיקה לפגיעה במערכת המשפט", target: "המשפט" },
-  { text: "קידום חקיקה לפגיעה בדרגים המקצועיים במשרדי הממשלה", target: "דרגים" },
+  { text: "קידום חקיקה לפגיעה במערכת המשפט", target: "מערכת המשפט" },
+  { text: "קידום חקיקה לפגיעה בדרגים המקצועיים במשרדי הממשלה", target: "דרגים מקצועיים" },
   { text: "הפעלת מכונת רעל נגד כל מי שלא מיישר קו עם הקואליציה", target: "מכונת רעל" },
   { text: "ניסיון לקדם חנינה לנאשם נתניהו", target: "חנינה" },
-  { text: "ריסוק הלכידות החברתית והעמקת השסעים בחברה הישראלית", target: "השסעים" },
-  { text: "שיא של נרצחים בחברה הערבית", target: "נרצחים" },
+  { text: "ריסוק הלכידות החברתית והעמקת השסעים בחברה הישראלית", target: "הלכידות החברתית" },
+  { text: "שיא נרצחים בחברה הערבית", target: "שיא נרצחים" },
   { text: "פגיעה ביחסים הבינלאומיים של מדינת ישראל", target: "פגיעה" },
   { text: "קידום חוק השתמטות", target: "השתמטות" },
   { text: "נסיונות לפגוע באמון הציבור בתהליך הבחירות ובתוצאותיהן", target: "הבחירות" },
-  { text: "התעלמות מהתגברות הטרור היהודי בשטחים", target: "טרור" },
-  { text: "ניסיונות לפגוע בתקשורת חופשית", target: "תקשורת" },
+  { text: "התעלמות מהתגברות הטרור היהודי בשטחים", target: "הטרור היהודי" },
+  { text: "ניסיונות לפגוע בתקשורת חופשית", target: "תקשורת חופשית" },
   { text: "נסיונות להפוך את המשטרה לזרוע אכיפה של הממשלה נגד מתנגדיה", target: "המשטרה" }
 ];
+
+// Rounds before which two-word mode can activate
+const TWO_WORD_MIN_ROUND = 3;
 
 const INITIAL_TIME = 45;
 const TIME_STEP    = 5;
 const MIN_TIME     = 10;
 const MAX_LIVES    = 3;
 
-function getRoundTime(r) { return Math.max(MIN_TIME, INITIAL_TIME - (r - 1) * TIME_STEP); }
+function getRoundTime(r, twoWord) {
+  const base = Math.max(MIN_TIME, INITIAL_TIME - (r - 1) * TIME_STEP);
+  return twoWord ? base * 2 : base;
+}
 
 function getRoundGrid(r) {
   const step = Math.floor((r - 1) / 2);
@@ -819,7 +868,17 @@ function hideLb() { document.getElementById('lb-overlay').classList.remove('show
 function clearLeaderboard() { if (!confirm('למחוק את כל התוצאות?')) return; lbSave([]); lastEntry=null; renderLeaderboard(); }
 
 // ─── Grid state ───────────────────────────────────────────
-let grid=[], rows=0, cols=0, targetCells=new Set(), selectedCells=[];
+let grid=[], rows=0, cols=0;
+// targetCells: for single-word mode, a Set of "r,c" keys.
+// For two-word mode, an array of two Sets.
+let targetCells = null;  // Set or null
+let targetCells2 = null; // Set or null (second word)
+let word1Found = false, word2Found = false;
+let isTwoWordRound = false;
+let currentWord1 = '', currentWord2 = '';
+let currentDisplayWord1 = '', currentDisplayWord2 = '';
+
+let selectedCells=[];
 let isDragging=false, selectStart=null, timerInterval=null;
 let timeLeft=INITIAL_TIME, totalTime=INITIAL_TIME, gameActive=false, hintUsed=false;
 
@@ -828,9 +887,32 @@ let clickChain = [];
 let clickMode = false;
 
 const recentIndexes = [];
-let currentTarget = 'קואליציה';
+
 const FINAL_TO_REGULAR = {'ך':'כ','ם':'מ','ן':'נ','ף':'פ','ץ':'צ'};
 function toGridWord(str) { return str.replace(/\s+/g,'').replace(/[ךםןףץ]/g,l=>FINAL_TO_REGULAR[l]); }
+
+// ─── Highlight all targets in question text ──────────────
+function buildHighlightedText(text, words) {
+  let result = text;
+  words.forEach(w => {
+    if (!w) return;
+    const escaped = w.replace(/[-\/\\^$*+?.()|[\]{}]/g,'\\$&');
+    result = result.replace(new RegExp(escaped, 'g'),
+      `<mark data-word="${w}" style="background:rgba(230,57,70,0.15);color:var(--accent);border-radius:3px;padding:0 2px;font-weight:900;transition:background 0.4s,color 0.4s;">${w}</mark>`);
+  });
+  return result;
+}
+
+// Turn a found word green in the banner
+function markWordFoundInBanner(displayWord) {
+  const el = document.getElementById('question-text');
+  el.querySelectorAll('mark').forEach(m => {
+    if (m.dataset.word === displayWord) {
+      m.style.background = 'rgba(45,198,83,0.18)';
+      m.style.color = '#15803d';
+    }
+  });
+}
 
 function pickQuestion() {
   const minGap = Math.min(3, ROUNDS_DATA.length-1);
@@ -838,21 +920,86 @@ function pickQuestion() {
   const idx = (pool.length>0?pool:ROUNDS_DATA.map((_,i)=>i))[Math.floor(Math.random()*(pool.length||ROUNDS_DATA.length))];
   recentIndexes.push(idx);
   if (recentIndexes.length>ROUNDS_DATA.length) recentIndexes.shift();
+
   const item = ROUNDS_DATA[idx];
   const cfg = getRoundGrid(round);
   const maxLen = Math.max(cfg.rows, cfg.cols);
-  let gridWord = toGridWord(item.target), displayTarget = item.target;
-  if (gridWord.length > maxLen) {
-    const candidates = item.target.split(/\s+/).map(w=>({orig:w,grid:toGridWord(w)})).filter(w=>w.grid.length>=2&&w.grid.length<=maxLen).sort((a,b)=>b.grid.length-a.grid.length);
-    if (candidates.length>0) { gridWord=candidates[0].grid; displayTarget=candidates[0].orig; }
-    else { gridWord=toGridWord(item.target).slice(0,maxLen); }
+  const rawParts = item.target.split(/\s+/).filter(Boolean);
+
+  // Decide two-word mode: needs round >= TWO_WORD_MIN_ROUND AND exactly 2 words in target
+  // AND both words fit in the grid
+  const canBeTwoWord = round >= TWO_WORD_MIN_ROUND
+    && rawParts.length === 2
+    && toGridWord(rawParts[0]).length >= 2
+    && toGridWord(rawParts[1]).length >= 2
+    && toGridWord(rawParts[0]).length <= maxLen
+    && toGridWord(rawParts[1]).length <= maxLen;
+
+  if (canBeTwoWord) {
+    isTwoWordRound = true;
+    currentDisplayWord1 = rawParts[0];
+    currentDisplayWord2 = rawParts[1];
+    currentWord1 = toGridWord(rawParts[0]);
+    currentWord2 = toGridWord(rawParts[1]);
+  } else {
+    isTwoWordRound = false;
+    // single word: pick best fitting word from target
+    let gridWord = toGridWord(item.target), displayTarget = item.target;
+    if (gridWord.length > maxLen) {
+      const candidates = rawParts.map(w=>({orig:w,grid:toGridWord(w)}))
+        .filter(w=>w.grid.length>=2&&w.grid.length<=maxLen)
+        .sort((a,b)=>b.grid.length-a.grid.length);
+      if (candidates.length>0) { gridWord=candidates[0].grid; displayTarget=candidates[0].orig; }
+      else { gridWord=toGridWord(item.target).slice(0,maxLen); }
+    }
+    currentWord1 = gridWord;
+    currentDisplayWord1 = displayTarget;
+    currentWord2 = '';
+    currentDisplayWord2 = '';
   }
-  currentTarget = gridWord;
-  const escaped = displayTarget.replace(/[-\/\\^$*+?.()|[\]{}]/g,'\\$&');
-  const highlighted = item.text.replace(new RegExp(escaped),`<mark style="background:rgba(230,57,70,0.15);color:var(--accent);border-radius:3px;padding:0 2px;font-weight:900;">${displayTarget}</mark>`);
+
+  // Update question banner
   const el = document.getElementById('question-text');
-  el.style.opacity=0; setTimeout(()=>{el.innerHTML=highlighted;el.style.opacity=1;},200);
-  return { text: item.text, target: displayTarget };
+  el.style.opacity=0;
+  setTimeout(()=>{
+    const displayWords = isTwoWordRound
+      ? [currentDisplayWord1, currentDisplayWord2]
+      : [currentDisplayWord1];
+    el.innerHTML = buildHighlightedText(item.text, displayWords);
+    el.style.opacity=1;
+  },200);
+
+  return { text: item.text };
+}
+
+// ─── Place one word in the grid ───────────────────────────
+function placeWordInGrid(word, existingTargetSet, forbidCells) {
+  const dirs=[[0,1],[0,-1],[1,0],[-1,0],[1,1],[1,-1],[-1,1],[-1,-1]];
+  let placed=false, attempts=0;
+  while (!placed && attempts < 500) {
+    attempts++;
+    const [dr,dc]=dirs[Math.floor(Math.random()*dirs.length)];
+    const startR=Math.floor(Math.random()*rows), startC=Math.floor(Math.random()*cols);
+    const endR=startR+dr*(word.length-1), endC=startC+dc*(word.length-1);
+    if (endR<0||endR>=rows||endC<0||endC>=cols) continue;
+    let ok=true;
+    const newCells = [];
+    for (let i=0;i<word.length;i++) {
+      const r=startR+dr*i, c=startC+dc*i;
+      const key = `${r},${c}`;
+      // Cell can't belong to the other word's cells (avoid overlap)
+      if (forbidCells && forbidCells.has(key)) { ok=false; break; }
+      if (grid[r][c]!==''&&grid[r][c]!==word[i]) { ok=false; break; }
+      newCells.push({r, c, ch: word[i]});
+    }
+    if (!ok) continue;
+    for (const {r, c, ch} of newCells) {
+      grid[r][c] = ch;
+      existingTargetSet.add(`${r},${c}`);
+    }
+    placed=true;
+  }
+  return placed;
 }
 
 function generateGrid() {
@@ -860,26 +1007,34 @@ function generateGrid() {
   rows=cfg.rows; cols=cfg.cols;
   document.documentElement.style.setProperty('--cell-size',cfg.cellSize+'px');
   document.documentElement.style.setProperty('--grid-font',cfg.fontSize);
-  const maxStraight = Math.max(rows,cols);
-  if (currentTarget.length>maxStraight) currentTarget=currentTarget.slice(0,maxStraight);
+
   grid=Array.from({length:rows},()=>Array(cols).fill(''));
-  targetCells=new Set();
-  const dirs=[[0,1],[0,-1],[1,0],[-1,0],[1,1],[1,-1],[-1,1],[-1,-1]];
-  const word=currentTarget; let placed=false, attempts=0;
-  while (!placed&&attempts<300) {
-    attempts++;
-    const [dr,dc]=dirs[Math.floor(Math.random()*dirs.length)];
-    const startR=Math.floor(Math.random()*rows), startC=Math.floor(Math.random()*cols);
-    const endR=startR+dr*(word.length-1), endC=startC+dc*(word.length-1);
-    if (endR<0||endR>=rows||endC<0||endC>=cols) continue;
-    let ok=true;
-    for (let i=0;i<word.length;i++) { const r=startR+dr*i,c=startC+dc*i; if(grid[r][c]!==''&&grid[r][c]!==word[i]){ok=false;break;} }
-    if (!ok) continue;
-    for (let i=0;i<word.length;i++) { const r=startR+dr*i,c=startC+dc*i; grid[r][c]=word[i]; targetCells.add(`${r},${c}`); }
-    placed=true;
+  targetCells = new Set();
+  targetCells2 = isTwoWordRound ? new Set() : null;
+
+  word1Found = false;
+  word2Found = false;
+
+  const maxStraight = Math.max(rows,cols);
+  const w1 = currentWord1.length > maxStraight ? currentWord1.slice(0,maxStraight) : currentWord1;
+
+  let ok1 = placeWordInGrid(w1, targetCells, null);
+  if (!ok1) { generateGrid(); return; }
+
+  if (isTwoWordRound) {
+    const w2 = currentWord2.length > maxStraight ? currentWord2.slice(0,maxStraight) : currentWord2;
+    let ok2 = placeWordInGrid(w2, targetCells2, targetCells);
+    if (!ok2) {
+      // Fallback: single word only
+      isTwoWordRound = false;
+      targetCells2 = null;
+      document.getElementById('word-progress').classList.remove('visible');
+    }
   }
-  if (!placed) { console.warn('retry'); return generateGrid(); }
-  for (let r=0;r<rows;r++) for (let c=0;c<cols;c++) if(grid[r][c]==='') grid[r][c]=HEB[Math.floor(Math.random()*HEB.length)];
+
+  // Fill remaining cells
+  for (let r=0;r<rows;r++) for (let c=0;c<cols;c++)
+    if(grid[r][c]==='') grid[r][c]=HEB[Math.floor(Math.random()*HEB.length)];
 }
 
 function renderGrid() {
@@ -1014,11 +1169,20 @@ function onTimeUp(){
   gameActive=false; stopTimer(); lives--; updateLivesUI();
   document.getElementById('grid').classList.add('shake');
   setTimeout(()=>document.getElementById('grid').classList.remove('shake'),500);
-  flashRed(); revealTarget(); clearClickChain();
+  flashRed(); revealAllTargets(); clearClickChain();
   if(lives<=0) setTimeout(()=>showGameOver('lives'),2200);
   else setTimeout(()=>startRound(round),2200);
 }
-function revealTarget(){targetCells.forEach(key=>{const[r,c]=key.split(',').map(Number);const el=getCellEl(r,c);if(el){el.classList.remove('selected','hint','found');el.classList.add('revealed');}});}
+function revealAllTargets(){
+  const allTargets = isTwoWordRound
+    ? [...(targetCells||[]), ...(targetCells2||[])]
+    : [...(targetCells||[])];
+  allTargets.forEach(key=>{
+    const[r,c]=key.split(',').map(Number);
+    const el=getCellEl(r,c);
+    if(el){el.classList.remove('selected','hint','found');el.classList.add('revealed');}
+  });
+}
 function flashRed(){const f=document.getElementById('screen-flash');f.className='screen-flash red';f.style.opacity='1';setTimeout(()=>{f.style.opacity='0';},400);}
 function updateLivesUI(){for(let i=1;i<=MAX_LIVES;i++)document.getElementById(`life-${i}`).classList.toggle('lost',i>lives);}
 function resetLives(){lives=MAX_LIVES;updateLivesUI();}
@@ -1060,19 +1224,50 @@ function updateSelUI(){
   });
 }
 
+function matchesWordSet(source, wordSet) {
+  if (!wordSet) return false;
+  const keys = new Set(source.map(({r,c})=>`${r},${c}`));
+  return keys.size === wordSet.size && [...keys].every(k => wordSet.has(k));
+}
+
+function markCellsFound(source) {
+  source.forEach(({r,c})=>{
+    const el=getCellEl(r,c);
+    if(el){el.classList.remove('selected');el.classList.add('found');}
+  });
+}
+
 function checkSel(){
   const source = clickMode ? clickChain : selectedCells;
   if(source.length < 2) return;
-  const keys=new Set(source.map(({r,c})=>`${r},${c}`));
-  const overlap=[...keys].filter(k=>targetCells.has(k)).length;
-  if(overlap===targetCells.size&&keys.size===targetCells.size){
-    source.forEach(({r,c})=>{
-      const el=getCellEl(r,c);
-      if(el){el.classList.remove('selected');el.classList.add('found');}
-    });
-    clearClickChain();
-    selectedCells=[];
-    setTimeout(onRoundWin,450);
+
+  if (!isTwoWordRound) {
+    // Single-word mode (original logic)
+    const keys=new Set(source.map(({r,c})=>`${r},${c}`));
+    const overlap=[...keys].filter(k=>targetCells.has(k)).length;
+    if(overlap===targetCells.size&&keys.size===targetCells.size){
+      markCellsFound(source);
+      clearClickChain(); selectedCells=[];
+      setTimeout(onRoundWin, 450);
+    }
+    return;
+  }
+
+  // Two-word mode: check against whichever word isn't found yet
+  if (!word1Found && matchesWordSet(source, targetCells)) {
+    markCellsFound(source);
+    word1Found = true;
+    markWordFoundInBanner(currentDisplayWord1);
+    clearClickChain(); selectedCells=[];
+  } else if (!word2Found && matchesWordSet(source, targetCells2)) {
+    markCellsFound(source);
+    word2Found = true;
+    markWordFoundInBanner(currentDisplayWord2);
+    clearClickChain(); selectedCells=[];
+  }
+
+  if (word1Found && word2Found) {
+    setTimeout(onRoundWin, 450);
   }
 }
 
@@ -1080,7 +1275,16 @@ function useHint(){
   if(hintUsed||!gameActive)return;
   hintUsed=true; hintsUsedTotal++;
   const btn=document.getElementById('hint-btn'); btn.disabled=true; btn.textContent='💡 נוצל';
-  const available=[...targetCells].filter(key=>{const el=getCellEl(...key.split(',').map(Number));return el&&!el.classList.contains('found')&&!el.classList.contains('hint');});
+
+  // Pick from whichever target group still has unfound cells
+  const allTargetKeys = [];
+  if (targetCells) [...targetCells].forEach(k => allTargetKeys.push(k));
+  if (targetCells2 && isTwoWordRound) [...targetCells2].forEach(k => allTargetKeys.push(k));
+
+  const available = allTargetKeys.filter(key=>{
+    const el=getCellEl(...key.split(',').map(Number));
+    return el&&!el.classList.contains('found')&&!el.classList.contains('hint');
+  });
   if(!available.length)return;
   const key=available[Math.floor(Math.random()*available.length)];
   const[r,c]=key.split(',').map(Number); const el=getCellEl(r,c); if(el)el.classList.add('hint');
@@ -1094,7 +1298,8 @@ function onRoundWin(){
   if(timeLeft>bestLeft)bestLeft=timeLeft;
   totalTimeSpent+=(totalTime-timeLeft);
   const roundScore=calcRoundScore(); totalScore+=roundScore; updateScoreDisplay();
-  const nextTime=getRoundTime(round+1);
+  const nextTwoWord = round+1 >= TWO_WORD_MIN_ROUND; // approximate
+  const nextTime=getRoundTime(round+1, false); // show base time
   document.getElementById('win-round').textContent=round;
   document.getElementById('win-score').textContent='+'+roundScore.toLocaleString();
   document.getElementById('win-time-left').textContent=timeLeft;
@@ -1138,12 +1343,25 @@ function dismissWelcome(){
 }
 
 // ─── Splash ───────────────────────────────────────────────
-function showSplash(r,item){
+function showSplash(r){
   document.getElementById('splash-round-badge').textContent=`סיבוב ${r}`;
-  const escaped=item.target.replace(/[-\/\\^$*+?.()|[\]{}]/g,'\\$&');
-  const highlighted=item.text.replace(new RegExp(escaped),`<mark style="background:rgba(230,57,70,0.18);color:var(--accent);border-radius:3px;padding:0 3px;font-weight:900;">${item.target}</mark>`);
-  document.getElementById('splash-accusation').innerHTML=highlighted;
-  document.getElementById('splash-target').textContent=item.target;
+
+  const displayWords = isTwoWordRound ? [currentDisplayWord1, currentDisplayWord2] : [currentDisplayWord1];
+  // Rebuild question text for splash (we need raw text)
+  const idx = recentIndexes[recentIndexes.length-1];
+  const rawText = ROUNDS_DATA[idx].text;
+  document.getElementById('splash-accusation').innerHTML = buildHighlightedText(rawText, displayWords);
+
+  if (isTwoWordRound) {
+    document.getElementById('splash-name-block').innerHTML =
+      `חפש את המילים: <strong>${currentDisplayWord1}</strong> ו-<strong>${currentDisplayWord2}</strong>`;
+    document.getElementById('splash-two-words-note').classList.add('visible');
+  } else {
+    document.getElementById('splash-name-block').innerHTML =
+      `חפש את המילה: <strong>${currentDisplayWord1}</strong>`;
+    document.getElementById('splash-two-words-note').classList.remove('visible');
+  }
+
   document.getElementById('splash-overlay').classList.remove('hidden');
 }
 function dismissSplash(){
@@ -1156,7 +1374,7 @@ function giveUp(){
   gameActive=false; stopTimer();
   document.getElementById('giveup-btn').disabled=true;
   clearClickChain();
-  revealTarget(); setTimeout(()=>showGameOver('giveup'),2000);
+  revealAllTargets(); setTimeout(()=>showGameOver('giveup'),2000);
 }
 function confirmRestart(){
   if(!confirm('להתחיל מחדש? הניקוד הנוכחי יאבד.'))return;
@@ -1172,14 +1390,22 @@ function confirmRestart(){
 
 function startRound(r){
   gameActive=false; stopTimer(); hintUsed=false;
+  isTwoWordRound=false; word1Found=false; word2Found=false;
   clearClickChain(); selectedCells=[];
   document.getElementById('round-num').textContent=r;
   const btn=document.getElementById('hint-btn'); btn.disabled=false; btn.innerHTML='💡 רמז';
   document.getElementById('giveup-btn').disabled=true;
   document.querySelectorAll('.cell').forEach(el=>el.classList.remove('found','selected','hint','revealed'));
-  totalTime=getRoundTime(r); timeLeft=totalTime;
-  const item=pickQuestion(); generateGrid(); renderGrid(); updateTimerUI();
-  showSplash(r,item);
+
+  pickQuestion();    // sets isTwoWordRound, currentWord1/2, updates banner
+  generateGrid();    // may reset isTwoWordRound to false if placement fails
+  renderGrid();
+
+  totalTime = getRoundTime(r, isTwoWordRound);
+  timeLeft = totalTime;
+  updateTimerUI();
+
+  showSplash(r);
 }
 
 document.addEventListener('mouseup',()=>{
@@ -1189,7 +1415,7 @@ document.addEventListener('mouseup',()=>{
 
 // ─── Init ─────────────────────────────────────────────────
 (function init(){
-  totalTime=getRoundTime(1); timeLeft=totalTime;
+  totalTime=getRoundTime(1, false); timeLeft=totalTime;
   updateTimerUI(); updateLivesUI(); updateScoreDisplay();
 })();
 </script>
